@@ -7,28 +7,7 @@
 using namespace std;
 using namespace cv;
 
-int R_MIN = 0;
-int R_MAX = 255;
-int G_MIN = 0;
-int G_MAX = 255;
-int B_MIN = 0;
-int B_MAX = 255;
 
-void on_trackbar(int , void*)
-{
-	
-}
-
-void createTrackbars(){
-	namedWindow("trackbars");
-
- 	createTrackbar("R_MIN", "trackbars", &R_MIN, R_MAX, on_trackbar);
-	createTrackbar("R_MAX", "trackbars", &R_MAX, R_MAX, on_trackbar);
-	createTrackbar("G_MIN", "trackbars", &G_MIN, G_MAX, on_trackbar);
-	createTrackbar("G_MAX", "trackbars", &G_MAX, G_MAX, on_trackbar);
-	createTrackbar("B_MIN", "trackbars", &B_MIN, B_MAX, on_trackbar);
-	createTrackbar("B_MAX", "trackbars", &B_MAX, B_MAX, on_trackbar);
-}
 int main (void){
  
     cv::Mat image1;//crea una imagen de dimensiones 0
@@ -40,39 +19,35 @@ int main (void){
     cv::Mat image7;
     cv::Mat image8;
     cv::Mat ROI;
-  
+	
+    int i=0;//iesima fila
+    int j=0;//jesima columna
     
-    image1 = imread("../media/1.JPG",1); //cargar una imagen de una ruta
+    std::vector<std::vector<cv::Point> > contornos;//vector de contornos de la imagen original
     
-	if(!image1.data){//comprueba si la imagen se cargo
+    image8 = imread("../media/3.JPG",1); //cargar una imagen de una ruta
+    
+	if(!image8.data){//comprueba si la imagen se cargo
 		cout<<"error al leer"<<endl;
    	 }
     
     
     	else{
 	  
-	  int key = 0;
-		while (key != 1)
-		{
-		namedWindow("original image");//crea ventana para mostrar la imagen
-		createTrackbars();//llama la funcion que va crear las barras para controlar el filtro de la funcion inRange();
-		ROI=image1(cv::Rect(500,1000,1000,800));
+	  
 		
-		
-//   				inRange(ROI,//matriz de entrada
-//   					Scalar(0,160,10),//limite inferior
-//   					Scalar(255,255,255),//limite superior
-//   					image4//matriz de salida
-//   				  
-//   				);
-				
-				
-				
+			
+			
+			namedWindow("ROI");//crea ventana para mostrar la imagen
+			//createTrackbars();//llama la funcion que va crear las barras para controlar el filtro de la funcion inRange();
+				//Creamos una ROI ya que la imagen original es demasiado grande
+				ROI=image8(cv::Rect(1000,2000,2000,600));
+				imshow("ROI",ROI);
+	  								
 				cvtColor(ROI, image2, CV_BGR2XYZ);
 				imshow("1  color XYZ",image2);
 				//vamos a eliminar los insectos mas oscuros
 				      threshold(image2, image3, 93, 255 ,1);
-				      //threshold(image2, image3, R_MIN, R_MAX ,1);
 				      imshow("2  threshold despues de xyz",image3);
 				      
 				      cvtColor(image3, image4, CV_BGR2GRAY);
@@ -82,41 +57,91 @@ int main (void){
 				      dilate(image5, image5,cv::Mat(),cv::Point(-1,-1),3);
 				      imshow("4  binario luego de grises",image5);
 				      threshold(image5, image5, 82, 255 ,1);
-				       
-				//inputMat.copyTo(outputMat, maskMat);
-				ROI.copyTo(image1, image5);					///**************ERROR******************
-				imshow("insectos negros eliminados",image1);
-				
-				inRange(image1,//matriz de entrada
-   					Scalar(5,160,10),//limite inferior
-   					Scalar(255,255,255),//limite superior
-   					image6//matriz de salida
-   				  
-   				);
-				 
-				 
-				 
-				//inRange(image1, Scalar(R_MIN,G_MIN,B_MIN), Scalar(R_MAX,G_MAX,B_MAX), image6);
-				imshow("inrange",image6);
-				//threshold(image4, image4, 0, 255 ,1);
-				//ROI.copyTo(image5, image4);
+				      imshow("5 treshol sobre la misma",image5);
 				
 				
-			//threshold(image4, image5, 240, 255 ,0);
-			//Canny(image4,image1,100,200);
-			//erode(image2, image2,MORPH_RECT);
-			//dilate(image2, image2,cv::Mat(),cv::Point(-1,-1),3);
-			
-// 			imshow("camera",ROI);
-// 			imshow("XYZ",image4);
-// 			imshow("mascar",image);
-				image1.~Mat();
-			waitKey(0);
-		}
+				//recorre toda la imagen pixel por pixel analizando donde hay blanco captura la coordenada
+				//y imprime en la ROI
+ 				for(i=0 ; i<= image5.rows - 1 ; i++)
+ 				{
+ 					
+ 					for(j=0 ; j<=image5.cols - 1 ; j++)
+ 					{
+ 						
+ 						if(image5.at<uchar>(i,j)==0)
+ 						{
+ 							ROI.at<cv::Vec3b>(i,j)[0]=238;//enviamos un valor a el canal azul
+							ROI.at<cv::Vec3b>(i,j)[1]=230;
+							ROI.at<cv::Vec3b>(i,j)[2]=193;
+ 							
+ 						}
+ 						else
+ 						{
+ 							
+ 						}
+ 					}
+ 					
+ 					
+ 				}
+ 				
+ 				imshow("6 Roi mod",ROI);
+// 				
+// 				//aplicamos un filtro de color para filtar lo que no es parecido al color de los insectos
+ 				inRange(ROI,//matriz de entrada
+    					Scalar(5,160,10),//limite inferior
+    					Scalar(255,255,255),//limite superior
+    					image6//matriz de salida
+    				  
+    				);
+				imshow("7 filtro",image6);
+				threshold(image6, image6, 0, 255 ,1);
+				
+				dilate(image6, image6,cv::Mat(),cv::Point(-1,-1),0);
+				imshow("7.5 dilate",image6);
+				threshold(image6, image6, 240, 255 ,0);
+				
+				
+				Canny(image6,image1,100,200);
+				dilate(image1, image1,cv::Mat(),cv::Point(-1,-1),1);
+				imshow("8 Filtro Canny",image1);
+				//buscamos los contornos
+					float n = 0;
+					int numero = 0;
+					cv::findContours(	image1,
+								contornos,
+								1,
+								1
+					);
+					
+					for(int i=0;i<contornos.size();i++)//dibujamos los contornos en la imagen
+					{
+						float aux = contourArea(contornos[i]);
+						/*cv::drawContours(	ROI, //imagen donde se va a dibujar
+									contornos,//vector de contorno
+									i,
+									Scalar(255,255,80),3,0);*/
+						if(160<aux && aux<500)
+						{
+							cv::drawContours(ROI,contornos,i,Scalar(255,0,255),3,0);
+							cout<<"aux =  "<<aux<<"contorno numero = "<<i<<endl;
+							numero++;
+						}
+						
+						/*if(n < contourArea(contornos[i]))
+						{	
+							n = contourArea(contornos[i]);
+							cout << "Area " << i << ": " << contourArea(contornos[i]) << endl;
+						}*/
+						
+					}
+					//cv::drawContours(ROI,contornos,1752,Scalar(255,0,255),3,0);
+					cout <<"Numero de Mosca Blanca Presente   ********" << numero <<"*******"<< endl;
+					imshow("contornos",ROI);
 		
+					
 		
 		
 	}
-    	//waitKey(0);//espera hasta que presiones alguna tecla
+    	waitKey(0);//espera hasta que presiones alguna tecla
 return 0;
 }
